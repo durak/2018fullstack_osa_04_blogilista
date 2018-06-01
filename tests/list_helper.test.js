@@ -62,9 +62,30 @@ describe('author with most titles', () => {
     expect(result).toEqual({ author: 'Michael Chan', blogs: 1 })
   })
 
-  test('in a list with many author is one with most titles', () => {
+  test('in a list with many authors is one with most titles', () => {
     const result = listHelper.mostBlogs(listWithManyBlogs)
     expect(result).toEqual({ author: 'Robert C. Martin', blogs: 3 })
+  })
+
+})
+
+describe('author with most likes', () => {
+  const listWithOneBlog = [dummyBlogs[0]]
+  const listWithManyBlogs = dummyBlogs
+
+  test('in an empty list is an empty object', () => {
+    const result = listHelper.mostLikes([])
+    expect(result).toEqual({ })
+  })
+
+  test('in a list of one blog is author of that', () => {
+    const result = listHelper.mostLikes(listWithOneBlog)
+    expect(result).toEqual({ author: 'Michael Chan', likes: 7 })
+  })
+
+  test('in a list with many authors is one with most likes', () => {
+    const result = listHelper.mostLikes(listWithManyBlogs)
+    expect(result).toEqual({ author: 'Edsger W. Dijkstra', likes: 17 })
   })
 
 })
