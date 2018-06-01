@@ -27,3 +27,24 @@ describe('total likes', () => {
     expect(result).toBe(36)
   })
 })
+
+describe('favorite blog is', () => {
+  const listWithOneBlog = [dummyBlogs[0]]
+  const listWithManyBlogs = dummyBlogs
+
+  test('an empty object when list has no blogs', () => {
+    const result = listHelper.favoriteBlog([])
+    expect(result).toEqual({})
+  })
+
+  test('the only blog in a list of one blogs', () => {
+    const result = listHelper.favoriteBlog(listWithOneBlog)
+    expect(result).toEqual(dummyBlogs[0])
+  })
+
+  test('the blog with most likes in a list of many blogs', () => {
+    const result = listHelper.favoriteBlog(listWithManyBlogs)
+    expect(result).toEqual(dummyBlogs[2])
+  })
+
+})
