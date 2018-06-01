@@ -46,5 +46,25 @@ describe('favorite blog is', () => {
     const result = listHelper.favoriteBlog(listWithManyBlogs)
     expect(result).toEqual(dummyBlogs[2])
   })
+})
+
+describe('author with most titles', () => {
+  const listWithOneBlog = [dummyBlogs[0]]
+  const listWithManyBlogs = dummyBlogs
+
+  test('in an empty list is an empty object', () => {
+    const result = listHelper.mostBlogs([])
+    expect(result).toEqual({ })
+  })
+
+  test('in a list of one blog is author of that', () => {
+    const result = listHelper.mostBlogs(listWithOneBlog)
+    expect(result).toEqual({ author: 'Michael Chan', blogs: 1 })
+  })
+
+  test('in a list with many author is one with most titles', () => {
+    const result = listHelper.mostBlogs(listWithManyBlogs)
+    expect(result).toEqual({ author: 'Robert C. Martin', blogs: 3 })
+  })
 
 })
