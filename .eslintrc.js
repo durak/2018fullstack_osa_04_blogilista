@@ -33,6 +33,6 @@ module.exports = {
     "no-console": 0
   },
   "parserOptions": {
-    "ecmaVersion": 2017
+    "ecmaVersion": 2018
   }
 };
