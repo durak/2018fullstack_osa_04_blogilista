@@ -2,158 +2,140 @@ const supertest = require('supertest')
 const { app, server } = require('../index')
 const api = supertest(app)
 const Blog = require('../models/blog')
-const dummyBlogs = require('./blogs').blogs
+const dummyBlogs = require('./blogs_test_data')
+const { format, blogsInDb, nonExistingId, blogsFromResponse } = require('./test_helper')
 
+describe('When there is initially some blogs saved:', async () => {
+  beforeAll(async () => {
+    await Blog.remove({})
 
-beforeAll(async () => {
-  await Blog.remove({})
+    const blogs = dummyBlogs.map(blog => new Blog(blog))
+    const promises = blogs.map(blog => blog.save())
+    await Promise.all(promises)
+  })
 
-  const blogs = dummyBlogs.map(blog => new Blog(blog))
-  const promises = blogs.map(blog => blog.save())
-  await Promise.all(promises)
+  test('all blogs are returned as json by GET /api/blogs', async () => {
+    const blogsInDatabase = await blogsInDb()
+    const blogsFromApi = blogsFromResponse(
+      await api
+        .get('/api/blogs')
+        .expect(200)
+        .expect('Content-Type', /application\/json/)
+    )
+
+    for (let blog of blogsInDatabase) {
+      expect(blogsFromApi).toContainEqual(blog)
+    }
+
+    expect(blogsFromApi.length).toBe(blogsInDatabase.length)
+  })
+
+  test('individual blogs are returned as JSON by GET /api/blogs/:id', async () => {
+    // to be added
+  })
+
+  test('404 returned by GET /api/blogs/:id with nonexisting valid id', async () => {
+    // to be added
+  })
+
+  test('400 is returned by GET /api/blogs/:id with invalid id', async () => {
+    // to be added
+  })
+
+  describe('addition of a new blog', async () => {
+    test('POST /api blogs succeeds with valid data', async () => {
+      const countBefore = (await blogsInDb()).length
+      const newa = {
+        title: 'uusi blogi',
+        author: 'testman',
+        url: 'abc',
+        likes: 99
+      }
+
+      await post('/api/blogs', newa, 201)
+
+      const blogsFromApi = blogsFromResponse(
+        await api
+          .get('/api/blogs')
+      )
+
+      expect(blogsFromApi.length).toBe(countBefore + 1)
+      expect(blogsFromApi).toContainEqual(newa)
+    })
+
+    test('POST /api/blogs with field likes missing succeeds with value likes=0', async () => {
+      const countBefore = (await blogsInDb()).length
+
+      let newa = {
+        title: 'uusi blogi',
+        author: 'testman',
+        url: 'abc'
+      }
+
+      let newb = {
+        title: 'uusi blogi 2',
+        author: 'testman 2',
+        url: 'abc 2',
+        likes: ''
+      }
+
+      await post('/api/blogs', newa, 201)
+      await post('/api/blogs', newb, 201)
+
+      const blogsFromApi = blogsFromResponse(
+        await api
+          .get('/api/blogs')
+      )
+
+      newa.likes = 0
+      newb.likes = 0
+
+      expect(blogsFromApi).toContainEqual(newa)
+      expect(blogsFromApi).toContainEqual(newb)
+      expect(blogsFromApi.length).toBe(countBefore + 2)
+    })
+
+    test('POST /api/blogs fails with proper statuscode if title or url is missing', async () => {
+      const countBefore = (await blogsInDb()).length
+      const invalidBlogs = [
+        { author: 'testman', url: 'abc', likes: 99 },
+        { title: 'uusi blogi', author: 'testman', likes: 99 },
+        { author: 'testman', likes: 99 }
+      ]
+
+      for (let blog of invalidBlogs) {
+        await post('/api/blogs', blog, 400)
+      }
+
+      const blogsFromApi = blogsFromResponse(
+        await api
+          .get('/api/blogs')
+      )
+
+      expect(blogsFromApi.length).toBe(countBefore)
+    })
+
+  })
+
+  describe('deletion of a blog', async () => {
+    test('DELETE /api/blogs/:id succeeds with proper statuscode', async () => {
+      // to be added
+    })
+  })
+
+  afterAll(() => {
+    server.close()
+  })
 })
 
-describe('API tests:', () => {
-  test('blogs are returned as json', async () => {
-    await api
-      .get('/api/blogs')
-      .expect(200)
-      .expect('Content-Type', /application\/json/)
-  })
-
-  test('all blogs and nothing else is returned', async () => {
-    const response = await api
-      .get('/api/blogs')
-
-    expect(response.body.length).toBe(dummyBlogs.length)
-
-    for (let blog of dummyBlogs) {
-      expect(response.body).toContainEqual(blog)
-    }
-  })
-
-  test('a valid new blog can be added', async () => {
-    const newa = {
-      title: 'uusi blogi',
-      author: 'testman',
-      url: 'abc',
-      likes: 99
-    }
-
-    await api
-      .post('/api/blogs')
-      .send(newa)
-      .expect(201)
-      .expect('Content-Type', /application\/json/)
-
-    const response = await api
-      .get('/api/blogs')
-
-    const body = bodyFormat(response.body)
-
-    expect(response.body.length).toBe(dummyBlogs.length + 1)
-    expect(body).toContainEqual(newa)
-  })
-
-  test('a post with no likes is added with value likes=0', async () => {
-    const countBefore = (await api.get('/api/blogs')).body.length
-
-    let newa = {
-      title: 'uusi blogi',
-      author: 'testman',
-      url: 'abc'
-    }
-
-    let newb = {
-      title: 'uusi blogi 2',
-      author: 'testman 2',
-      url: 'abc 2',
-      likes: ''
-    }
-
-    await api
-      .post('/api/blogs')
-      .send(newa)
-      .expect(201)
-      .expect('Content-Type', /application\/json/)
-
-    await api
-      .post('/api/blogs')
-      .send(newb)
-      .expect(201)
-      .expect('Content-Type', /application\/json/)
-
-    const response = await api
-      .get('/api/blogs')
-
-    const body = bodyFormat(response.body)
-
-    newa.likes = 0
-    newb.likes = 0
-
-    expect(body).toContainEqual(newa)
-    expect(body).toContainEqual(newb)
-    expect(body.length).toBe(countBefore + 2)
-
-  })
-
-  test('a blog without title or url is not added', async () => {
-    const countBefore = (await api.get('/api/blogs')).body.length
-
-    const newa = {
-      author: 'testman',
-      url: 'abc',
-      likes: 99
-    }
-
-    const newb = {
-      title: 'uusi blogi',
-      author: 'testman',
-      likes: 99
-    }
-
-    const newc = {
-      author: 'testman',
-      likes: 99
-    }
-
-    await api
-      .post('/api/blogs')
-      .send(newa)
-      .expect(400)
-
-    await api
-      .post('/api/blogs')
-      .send(newb)
-      .expect(400)
-
-    await api
-      .post('/api/blogs')
-      .send(newc)
-      .expect(400)
-
-    const response = await api
-      .get('/api/blogs')
-
-    expect(response.body.length).toBe(countBefore)
-  })
-
-
-})
-
-
-afterAll(() => {
-  server.close()
-})
-
-
-// Helpers
-
-function bodyFormat(body) {
-  return body.map(blog => {
-    const b = { ...blog }
-    delete b._id
-    delete b.__v
-    return b
-  })
+async function post(path, obj, statusExpected) {
+  await api
+    .post(path)
+    .send(obj)
+    .expect(statusExpected)
+    .expect('Content-Type', /application\/json/)
 }
+
+
+
+
