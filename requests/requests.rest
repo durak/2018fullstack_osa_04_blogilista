@@ -11,3 +11,7 @@ content-type: application/json
     "url": "osoite",
     "likes": 3    
 }
+
+###
+
+DELETE http://localhost:3003/api/blogs/5b145b564a9d7967653c7ab

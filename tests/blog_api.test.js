@@ -118,8 +118,81 @@ describe('When there is initially some blogs saved:', async () => {
   })
 
   describe('deletion of a blog', async () => {
+    let addedBlog
+
+    beforeAll(async () => {
+      addedBlog = new Blog({
+        author: 'deleteman',
+        title: 'poisto pyynnöllä HTTP DELETE',
+        url: 'del',
+        likes: 333
+      })
+      await addedBlog.save()
+    })
+
     test('DELETE /api/blogs/:id succeeds with proper statuscode', async () => {
-      // to be added
+      const blogsBefore = await blogsInDb()
+
+      await api
+        .delete(`/api/blogs/${addedBlog._id}`)
+        .expect(204)
+
+      const blogsAfterOperation = await blogsInDb()
+
+      const contents = blogsAfterOperation.map(r => r.title)
+
+      expect(contents).not.toContain(addedBlog.title)
+      expect(blogsAfterOperation.length).toBe(blogsBefore.length - 1)
+    })
+
+  })
+
+  describe('updating a blog', async () => {
+    let newBlog
+
+    beforeAll(async () => {
+      newBlog = new Blog({
+        author: 'old putman',
+        title: 'old title',
+        url: 'old url',
+        likes: 1
+      })
+      await newBlog.save()
+    })
+
+    test('PUT /api/blogs/:id succeeds with valid partial data', async () => {
+      const updates = [
+        { author: 'new author' },
+        { title: 'new title' },
+        { url: 'new url' },
+        { likes: 99 }
+      ]
+
+      for (let update of updates) {
+        await put('/api/blogs/', newBlog._id, update, 200)
+      }
+
+      const fromDB = format(await Blog.findById(newBlog._id))
+      expect(fromDB.author).toContain('new author')
+    })
+
+    test('PUT /api/blogs/:id succeeds with valid full data', async () => {
+      const update = {
+        title: 'new title 2',
+        author: 'new author 2',
+        url: 'new url 2',
+        likes: 66
+      }
+
+      await put('/api/blogs/', newBlog._id, update, 200)
+
+      const fromDB = format(await Blog.findById(newBlog._id))
+      expect(fromDB.author).toContain('new author 2')
+    })
+
+    test('PUT /api/blogs/:id fails with invalid data', async () => {
+      await put('/api/blogs/', newBlog._id, {}, 400)
+      await put('/api/blogs/', newBlog._id, { invalid:'something' }, 400)
     })
   })
 
@@ -136,6 +209,13 @@ async function post(path, obj, statusExpected) {
     .expect('Content-Type', /application\/json/)
 }
 
+async function put(path, id, obj, statusExpected) {
+  await api
+    .put(`${path}${id}`)
+    .send(obj)
+    .expect(statusExpected)
+    .expect('Content-Type', /application\/json/)
+}
 
 
 
