@@ -14,7 +14,6 @@ beforeAll(async () => {
   await User.remove({})
 
   validUser = await getUser('ValidUsername', 'Validuser_name', 'password')
-
 })
 
 describe('when some users initially exist',  () => {
@@ -255,7 +254,8 @@ describe('When there is initially some blogs saved:', () => {
         author: 'deleteman',
         title: 'poisto pyynnöllä HTTP DELETE',
         url: 'del',
-        likes: 333
+        likes: 333,
+        user:validUser.id
       })
       await addedBlog.save()
     })
@@ -265,6 +265,7 @@ describe('When there is initially some blogs saved:', () => {
 
       await api
         .delete(`/api/blogs/${addedBlog._id}`)
+        .set('Authorization', 'bearer ' + validUser.token)
         .expect(204)
 
       const blogsAfterOperation = await blogsInDb()
@@ -273,6 +274,27 @@ describe('When there is initially some blogs saved:', () => {
 
       expect(contents).not.toContain(addedBlog.title)
       expect(blogsAfterOperation.length).toBe(blogsBefore.length - 1)
+    })
+
+    test('DELETE /api/blogs:id fails with wrong token', async () => {
+      const blogsBefore = await blogsInDb()
+
+      let invalidBlog = new Blog({
+        author:'a',
+        title: 't',
+        url:'u',
+        user:'5b17097567018a67b79348bc'
+      })
+      await invalidBlog.save()
+
+      await api
+        .delete(`/api/blogs/${invalidBlog._id}`)
+        .set('Authorization', 'bearer ' + validUser.token)
+        .expect(401)
+
+      const blogsAfterOperation = await blogsInDb()
+
+      expect(blogsAfterOperation.length).toBe(blogsBefore.length + 1)
     })
 
   })
