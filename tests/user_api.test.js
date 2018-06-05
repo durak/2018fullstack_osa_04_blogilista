@@ -15,6 +15,35 @@ describe('when some users initially exist', async () => {
 
   })
 
+  describe('login', async () => {
+    test('POST /api/login succeeds and returns a token with a valid username and password', async () => {
+      const response = await api
+        .post('/api/login')
+        .send({ username: user1.username, password: 'password' })
+        .expect(200)
+
+      expect(response.body.token).not.toBe(null)
+      expect(response.body.username).toBe(user1.username)
+      expect(response.body.name).toBe(user1.name)
+    })
+
+    test('POST /api/login fails with a wrong username or password', async () => {
+      const response1 = await api
+        .post('/api/login')
+        .send({ username: 'wrong', password: 'password' })
+        .expect(401)
+
+      const response2 = await api
+        .post('/api/login')
+        .send({ username: user1.username, password: 'wrong' })
+        .expect(401)
+
+      expect(response1.body.token).toBe(undefined)
+      expect(response1.body.error).toEqual('invalid username or password')
+      expect(response2.body.error).toEqual('invalid username or password')
+    })
+  })
+
   describe('addition of a new user', async () => {
     test('POST /api/users succeeds with valid data', async () => {
       const usersBefore = await usersInDb()
