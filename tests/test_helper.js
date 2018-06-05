@@ -1,4 +1,7 @@
 const Blog = require('../models/blog')
+const User = require('../models/user')
+const bcrypt = require('bcrypt')
+
 
 const format = (blog) => {
   return {
@@ -26,8 +29,26 @@ const nonExistingId = async () => {
   return id
 }
 
+const usersInDb = async () => {
+  const c = await User.find({})
+  return c.map(User.format)
+}
+
+const getUser = async (username, name, password) => {
+  const saltRounds = 10
+  const passwordHash = await bcrypt.hash(password, saltRounds)
+
+  const user = new User({
+    username,
+    name,
+    adult: true,
+    passwordHash
+  })
+
+  return await user.save()
+}
 
 module.exports = {
-  format, blogsInDb, nonExistingId, blogsFromResponse
+  format, blogsInDb, nonExistingId, blogsFromResponse, getUser, usersInDb
 }
 

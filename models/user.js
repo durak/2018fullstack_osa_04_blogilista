@@ -9,7 +9,7 @@ const userSchema = new mongoose.Schema({
 
 userSchema.statics.format = (user) => {
   return {
-    id: user._id,
+    id: user._id.toString(),
     username: user.username,
     name: user.name,
     adult: user.adult
