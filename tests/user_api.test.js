@@ -35,10 +35,16 @@ describe('when some users initially exist', async () => {
       newUser._id = response.body.id
       newUser = User.format(newUser)
 
-      const usersAfter = await usersInDb()
+      let usersAfter = await usersInDb()
+      const usersAfterMinusBlogs = usersAfter.map((user) => {
+        let u = { ...user }
+        delete u.blogs
+        return u
+      })
+
 
       expect(usersAfter.length).toBe(usersBefore.length + 1)
-      expect(usersAfter).toContainEqual(newUser)
+      expect(usersAfterMinusBlogs).toContainEqual(newUser)
     })
 
     test('POST /api/users defaults to adult user', async () => {

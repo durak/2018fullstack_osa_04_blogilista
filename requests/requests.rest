@@ -9,7 +9,8 @@ content-type: application/json
     "title": "otsikko",
     "author": "kirjoittaja",
     "url": "osoite",
-    "likes": 3    
+    "likes": 3,
+    "userId": "5b16868b0568ee2caad9b98f"    
 }
 
 ###
