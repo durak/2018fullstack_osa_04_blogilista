@@ -54,13 +54,10 @@ describe('When there is initially some blogs saved:', async () => {
 
       await post('/api/blogs', newa, 201)
 
-      const blogsFromApi = blogsFromResponse(
-        await api
-          .get('/api/blogs')
-      )
+      const blogsAfter = await blogsInDb()
 
-      expect(blogsFromApi.length).toBe(countBefore + 1)
-      expect(blogsFromApi).toContainEqual(newa)
+      expect(blogsAfter.length).toBe(countBefore + 1)
+      expect(blogsAfter).toContainEqual(newa)
     })
 
     test('POST /api/blogs with field likes missing succeeds with value likes=0', async () => {
@@ -82,17 +79,14 @@ describe('When there is initially some blogs saved:', async () => {
       await post('/api/blogs', newa, 201)
       await post('/api/blogs', newb, 201)
 
-      const blogsFromApi = blogsFromResponse(
-        await api
-          .get('/api/blogs')
-      )
+      const blogsAfter = await blogsInDb()
 
       newa.likes = 0
       newb.likes = 0
 
-      expect(blogsFromApi).toContainEqual(newa)
-      expect(blogsFromApi).toContainEqual(newb)
-      expect(blogsFromApi.length).toBe(countBefore + 2)
+      expect(blogsAfter).toContainEqual(newa)
+      expect(blogsAfter).toContainEqual(newb)
+      expect(blogsAfter.length).toBe(countBefore + 2)
     })
 
     test('POST /api/blogs fails with proper statuscode if title or url is missing', async () => {
@@ -107,12 +101,9 @@ describe('When there is initially some blogs saved:', async () => {
         await post('/api/blogs', blog, 400)
       }
 
-      const blogsFromApi = blogsFromResponse(
-        await api
-          .get('/api/blogs')
-      )
+      const blogsAfter = await blogsInDb()
 
-      expect(blogsFromApi.length).toBe(countBefore)
+      expect(blogsAfter.length).toBe(countBefore)
     })
 
   })
