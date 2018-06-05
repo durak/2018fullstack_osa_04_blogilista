@@ -47,6 +47,7 @@ const getUser = async (username, name, password) => {
   })
 
   const savedUser = await user.save()
+
   const token = jwt.sign({ username: savedUser.username, id: savedUser._id }, process.env.SECRET)
   savedUser.token = token
 
