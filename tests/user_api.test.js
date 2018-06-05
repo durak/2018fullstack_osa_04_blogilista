@@ -1,18 +1,19 @@
+const jwt = require('jsonwebtoken')
 const supertest = require('supertest')
 const { app, server } = require('../index')
 const api = supertest(app)
 const User = require('../models/user')
 const { format, blogsInDb, nonExistingId, blogsFromResponse, getUser, usersInDb } = require('./test_helper')
 
-describe('when some users initially exist', async () => {
+describe('when some users initially exist',  () => {
   let user1
   let user2
 
-  beforeAll(async () => {
+  beforeEach(async () => {
     await User.remove({})
+
     user1 = await getUser('username1', 'user1', 'password')
     user2 = await getUser('username2', 'user2', 'password')
-
   })
 
   describe('login', async () => {
@@ -49,7 +50,7 @@ describe('when some users initially exist', async () => {
       const usersBefore = await usersInDb()
 
       let newUser = {
-        username: 'newUsername',
+        username: 'newUsernameSuccess',
         name: 'newName',
         adult: false,
         password: 'secret'
@@ -64,7 +65,12 @@ describe('when some users initially exist', async () => {
       newUser._id = response.body.id
       newUser = User.format(newUser)
 
-      let usersAfter = await usersInDb()
+      const usersAfter = await usersInDb()
+
+      console.log(usersAfter)
+      
+
+
       const usersAfterMinusBlogs = usersAfter.map((user) => {
         let u = { ...user }
         delete u.blogs
@@ -131,6 +137,7 @@ describe('when some users initially exist', async () => {
 
 
       const usersAfter = await usersInDb()
+
       expect(usersBefore.length).toBe(usersAfter.length)
       expect(response.body.error).toEqual('username must be unique')
     })

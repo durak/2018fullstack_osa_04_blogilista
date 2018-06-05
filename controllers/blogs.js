@@ -1,4 +1,5 @@
 const blogsRouter = require('express').Router()
+const jwt = require('jsonwebtoken')
 const Blog = require('../models/blog')
 const User = require('../models/user')
 
@@ -14,6 +15,13 @@ blogsRouter.post('/', async (request, response) => {
   try {
     const body = request.body
 
+    const decodedToken = jwt.verify(request.token, process.env.SECRET)
+    const user = await User.findById(decodedToken.id)
+
+    if (!decodedToken.id || !user) {
+      return response.status(401).json({ error: 'token missing or invalid' })
+    }
+
     if (!body.title || !body.url) {
       return response.status(400).json({ error: 'content missing' })
     }
@@ -22,8 +30,6 @@ blogsRouter.post('/', async (request, response) => {
       body.likes = 0
     }
 
-    const users = await User.find({})
-    const user = users[0]
     body.user = user._id
 
     const blog = new Blog(body)
@@ -35,9 +41,12 @@ blogsRouter.post('/', async (request, response) => {
 
     response.status(201).json(savedBlog)
   } catch (exception) {
-
-    console.log(exception)
-    response.status(500).json({ error: 'something went wrong...' })
+    if (exception.name === 'JsonWebTokenError' ) {
+      response.status(401).json({ error: exception.message })
+    } else {
+      console.log(exception)
+      response.status(500).json({ error: 'something went wrong...' })
+    }
   }
 })
 

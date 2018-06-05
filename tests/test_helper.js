@@ -1,3 +1,4 @@
+const jwt = require('jsonwebtoken')
 const Blog = require('../models/blog')
 const User = require('../models/user')
 const bcrypt = require('bcrypt')
@@ -45,7 +46,11 @@ const getUser = async (username, name, password) => {
     passwordHash
   })
 
-  return await user.save()
+  const savedUser = await user.save()
+  const token = jwt.sign({ username: savedUser.username, id: savedUser._id }, process.env.SECRET)
+  savedUser.token = token
+
+  return savedUser
 }
 
 module.exports = {

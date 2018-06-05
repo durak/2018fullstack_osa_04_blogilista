@@ -2,12 +2,14 @@ const supertest = require('supertest')
 const { app, server } = require('../index')
 const api = supertest(app)
 const Blog = require('../models/blog')
+const User = require('../models/user')
 const dummyBlogs = require('./blogs_test_data')
-const { format, blogsInDb, nonExistingId, blogsFromResponse } = require('./test_helper')
+const { format, blogsInDb, nonExistingId, blogsFromResponse, getUser } = require('./test_helper')
 
-describe('When there is initially some blogs saved:', async () => {
+describe('When there is initially some blogs saved:', () => {
   beforeAll(async () => {
     await Blog.remove({})
+    await User.remove({})
 
     const blogs = dummyBlogs.map(blog => new Blog(blog))
     const promises = blogs.map(blog => blog.save())
@@ -43,6 +45,13 @@ describe('When there is initially some blogs saved:', async () => {
   })
 
   describe('addition of a new blog', async () => {
+    let user
+    beforeEach(async () => {
+      await User.remove({})
+      user = await getUser('successman', 'success', 'password')
+    })
+
+
     test('POST /api blogs succeeds with valid data', async () => {
       const countBefore = (await blogsInDb()).length
       const newa = {
@@ -52,10 +61,11 @@ describe('When there is initially some blogs saved:', async () => {
         likes: 99
       }
 
-      await post('/api/blogs', newa, 201)
+      const response = await post('/api/blogs', newa, user.token, 201)
 
       const blogsAfter = await blogsInDb()
 
+      expect(JSON.stringify(response.body.user)).toContain(user._id)
       expect(blogsAfter.length).toBe(countBefore + 1)
       expect(blogsAfter).toContainEqual(newa)
     })
@@ -76,8 +86,8 @@ describe('When there is initially some blogs saved:', async () => {
         likes: ''
       }
 
-      await post('/api/blogs', newa, 201)
-      await post('/api/blogs', newb, 201)
+      await post('/api/blogs', newa, user.token, 201)
+      await post('/api/blogs', newb, user.token, 201)
 
       const blogsAfter = await blogsInDb()
 
@@ -98,7 +108,7 @@ describe('When there is initially some blogs saved:', async () => {
       ]
 
       for (let blog of invalidBlogs) {
-        await post('/api/blogs', blog, 400)
+        await post('/api/blogs', blog, user.token, 400)
       }
 
       const blogsAfter = await blogsInDb()
@@ -192,12 +202,16 @@ describe('When there is initially some blogs saved:', async () => {
   })
 })
 
-async function post(path, obj, statusExpected) {
-  await api
+async function post(path, obj, token, statusExpected) {
+  const response =  await api
     .post(path)
+    .set('Authorization', 'bearer ' + token)
     .send(obj)
     .expect(statusExpected)
     .expect('Content-Type', /application\/json/)
+
+    
+  return response
 }
 
 async function put(path, id, obj, statusExpected) {
