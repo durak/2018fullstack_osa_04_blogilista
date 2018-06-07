@@ -16,6 +16,7 @@ blogsRouter.post('/', async (request, response) => {
     const body = request.body
 
     const decodedToken = jwt.verify(request.token, process.env.SECRET)
+
     const user = await User.findById(decodedToken.id)
 
     if (!decodedToken.id || !user) {
@@ -33,15 +34,17 @@ blogsRouter.post('/', async (request, response) => {
     body.user = user._id
 
     const blog = new Blog(body)
-    const savedBlog = await blog
+    let savedBlog = await blog
       .save()
+
+    Blog.populate(savedBlog, { path: 'user', select: 'username name' })
 
     user.blogs = user.blogs.concat(savedBlog._id)
     await user.save()
 
-    response.status(201).json(savedBlog)
+    response.status(201).json(Blog.format(savedBlog))
   } catch (exception) {
-    if (exception.name === 'JsonWebTokenError' ) {
+    if (exception.name === 'JsonWebTokenError') {
       response.status(401).json({ error: exception.message })
     } else {
       console.log(exception)
@@ -68,7 +71,7 @@ blogsRouter.delete('/:id', async (request, response) => {
     response.status(204).end()
 
   } catch (exception) {
-    if (exception.name === 'JsonWebTokenError' ) {
+    if (exception.name === 'JsonWebTokenError') {
       return response.status(401).json({ error: exception.message })
     }
 
